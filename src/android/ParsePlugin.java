@@ -111,5 +111,18 @@ public class ParsePlugin extends CordovaPlugin {
         });
     }
 
+    /**
+     * Run a Parse Cloud function
+     */
+    private void runParseCloudFunction (final JSONArray args, final CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run () {
+                /**
+                 * Call Parse Cloud Function
+                 */
+                
+            }
+        });
+    }
 }
 
