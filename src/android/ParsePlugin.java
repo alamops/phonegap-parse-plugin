@@ -51,7 +51,7 @@ public class ParsePlugin extends CordovaPlugin {
             return true;
         }
         if (action.equals(ACTION_CLOUD_FUNCTION)) {
-            this.runCloudFunction(args.getJSONObject(0), callbackContext);
+            this.runCloudFunction(args, callbackContext);
             return true;
         }
         return false;
@@ -123,7 +123,7 @@ public class ParsePlugin extends CordovaPlugin {
      * Run a Parse Cloud function
      */
     private void runCloudFunction (final JSONObject args, final CallbackContext callbackContext) {
-        String function = args.getString("function");
+        String method = args.getString("method");
         JSONObject params = args.getJSONObject("params");
 
         // Convert JSON to Map
@@ -138,7 +138,7 @@ public class ParsePlugin extends CordovaPlugin {
                 /**
                  * Call Parse Cloud Function
                  */
-                ParseCloud.callFunctionInBackground(args.getString("function"), params, new FunctionCallback<String>() {
+                ParseCloud.callFunctionInBackground(args.getString("method"), params, new FunctionCallback<String>() {
                     void done(String result, ParseException e) {
                         if (e == null) {
                             callbackContext.success(result);
