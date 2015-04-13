@@ -1,15 +1,18 @@
 package org.apache.cordova.core;
 
+import java.lang.Object;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
-import com.parse.Parse;
-import com.parse.ParseInstallation;
-import com.parse.PushService;
+import com.parse.*;
+
 
 public class ParsePlugin extends CordovaPlugin {
     public static final String ACTION_INITIALIZE = "initialize";
@@ -18,6 +21,7 @@ public class ParsePlugin extends CordovaPlugin {
     public static final String ACTION_GET_SUBSCRIPTIONS = "getSubscriptions";
     public static final String ACTION_SUBSCRIBE = "subscribe";
     public static final String ACTION_UNSUBSCRIBE = "unsubscribe";
+    public static final String ACTION_CLOUD_FUNCTION = "cloudFunction";
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -44,6 +48,10 @@ public class ParsePlugin extends CordovaPlugin {
         }
         if (action.equals(ACTION_UNSUBSCRIBE)) {
             this.unsubscribe(args.getString(0), callbackContext);
+            return true;
+        }
+        if (action.equals(ACTION_CLOUD_FUNCTION)) {
+            this.runCloudFunction(args.getJSONObject(0), callbackContext);
             return true;
         }
         return false;
@@ -114,15 +122,92 @@ public class ParsePlugin extends CordovaPlugin {
     /**
      * Run a Parse Cloud function
      */
-    private void runParseCloudFunction (final JSONArray args, final CallbackContext callbackContext) {
+    private void runCloudFunction (final JSONObject args, final CallbackContext callbackContext) {
+        String function = args.getString("function");
+        JSONObject params = args.getJSONObject("params");
+
+        // Convert JSON to Map
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        if (params != JSONObject.NULL) {
+            map = toMap(params);
+        }
+
         cordova.getThreadPool().execute(new Runnable() {
             public void run () {
                 /**
                  * Call Parse Cloud Function
                  */
-                
+                ParseCloud.callFunctionInBackground(args.getString("function"), params, new FunctionCallback<String>() {
+                    void done(String result, ParseException e) {
+                        if (e == null) {
+                            callbackContext.success(result);
+                        }
+                        else {
+                            callbackContext.error(e.getCode() + "");
+                        }
+                    }
+                });
             }
         });
+    }
+    
+    /**
+     * UTILS FUNCTIONS
+     */
+    
+    /**
+     * CONVERT JSON TO MAP
+     */
+    public static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
+        Map<String, Object> retMap = new HashMap<String, Object>();
+
+        if(json != JSONObject.NULL) {
+            retMap = toMap(json);
+        }
+        return retMap;
+    }
+    
+    /**
+     * CONVERT TO MAP
+     */
+    public static Map<String, Object> toMap(JSONObject object) throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        Iterator<String> keysItr = object.keys();
+        while(keysItr.hasNext()) {
+            String key = keysItr.next();
+            Object value = object.get(key);
+
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            map.put(key, value);
+        }
+        return map;
+    }
+    
+    /**
+     * CONVERT TO LIST
+     */
+    public static List<Object> toList(JSONArray array) throws JSONException {
+        List<Object> list = new ArrayList<Object>();
+        for(int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            list.add(value);
+        }
+        return list;
     }
 }
 
