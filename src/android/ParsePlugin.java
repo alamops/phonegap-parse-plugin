@@ -133,21 +133,17 @@ public class ParsePlugin extends CordovaPlugin {
             map = toMap(params);
         }
 
-        cordova.getThreadPool().execute(new Runnable() {
-            public void run () {
-                /**
-                 * Call Parse Cloud Function
-                 */
-                ParseCloud.callFunctionInBackground(args.getString("method"), params, new FunctionCallback<String>() {
-                    void done(String result, ParseException e) {
-                        if (e == null) {
-                            callbackContext.success(result);
-                        }
-                        else {
-                            callbackContext.error(e.getCode() + "");
-                        }
-                    }
-                });
+        /**
+         * Call Parse Cloud Function
+         */
+        ParseCloud.callFunctionInBackground(args.getString("method"), params, new FunctionCallback<String>() {
+            void done(String result, ParseException e) {
+                if (e == null) {
+                    callbackContext.success(result);
+                }
+                else {
+                    callbackContext.error(e.getCode() + "");
+                }
             }
         });
     }

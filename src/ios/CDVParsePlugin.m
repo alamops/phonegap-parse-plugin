@@ -84,6 +84,34 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)runCloudFunction: (CDVInvokedUrlCommand *)command
+{
+    CDVPluginResult* pluginResult = nil;
+    
+    // Get Attributes
+    NSString * method = [command.arguments objectAtIndex:0];
+    NSError * error = nil;
+    NSDictionary *params = [NSJSONSerialization JSONObjectWithData:[command.arguments objectAtIndex:1] options:kNilOptions error:&error];
+
+    /**
+     * CALL FUNCTION FROM PARSE CLOUD
+     */
+    [PFCloud callFunctionInBackground:method
+                       withParameters:params
+                                block:^(NSString *result, NSError *error) {
+       if (!error)
+       {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+       }
+       else
+       {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"error"];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+       }
+    }];
+}
+
 @end
 
 @implementation AppDelegate (CDVParsePlugin)
